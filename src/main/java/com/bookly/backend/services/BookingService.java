@@ -34,15 +34,15 @@ public class BookingService {
     }
 
     public Page<Booking> filterAllBookings(String status, String type, String owner, int page, String sort, String sortOrder) {
-        Boolean isActive = !status.equals("") ? status.equals("active") : null;
-        ItemType car = type.toLowerCase().contains("car") ? ItemType.Car : null;
         ItemType parking = type.toLowerCase().contains("parking") ? ItemType.Parking : null;
         ItemType room = type.toLowerCase().contains("room") ? ItemType.Room : null;
-        User user = !owner.equals("") ? userRepository.getByLogin(owner).orElse(null) : null;
-        Sort.Direction sortDir = sortOrder.toLowerCase().equals("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        ItemType car = type.toLowerCase().contains("car") ? ItemType.Car : null;
+        Boolean isActive = !status.equals("") ? status.equals("active") : null;
+        User user = userRepository.getByLogin(owner).orElse(null);
 
         Pageable pageConfig;
         if (!sort.equals("empty")) {
+            Sort.Direction sortDir = sortOrder.toLowerCase().equals("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
             pageConfig = PageRequest.of(page, PAGE_SIZE, Sort.by(sortDir, sort));
         } else {
             pageConfig = PageRequest.of(page, PAGE_SIZE);
@@ -50,5 +50,4 @@ public class BookingService {
 
         return bookingRepository.findAllByIsActiveAndItemTypeAndOwner(isActive, car, parking, room, user, pageConfig);
     }
-
 }
