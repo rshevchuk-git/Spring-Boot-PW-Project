@@ -57,10 +57,9 @@ public class BookingController {
     @ApiOperation(value = "Make reservation of some item")
     @ApiImplicitParam(name = "Security-Token", paramType = "header", dataTypeClass = String.class)
     public ResponseEntity<Boolean> makeReservation(@RequestBody Reservation reservation) {
-        if (reservation.getFromDate() == null || reservation.getToDate() == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        if (reservation.getItemId() == null || reservation.getItemId() < 0) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        if (reservation.getUserId() == null || reservation.getUserId() < 0) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        if (reservation.getItemType() == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (reservation.isInvalid()) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         Boolean isSuccessful = reservationService.makeReservation(reservation);
         return new ResponseEntity<>(isSuccessful, HttpStatus.OK);
     }
