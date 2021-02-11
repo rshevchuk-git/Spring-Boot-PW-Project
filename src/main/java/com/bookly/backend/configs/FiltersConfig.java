@@ -2,6 +2,7 @@ package com.bookly.backend.configs;
 
 import com.bookly.backend.filters.SecurityFilter;
 import com.bookly.backend.services.UserService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -14,16 +15,13 @@ import java.util.Arrays;
 import java.util.Optional;
 
 @Configuration
+@AllArgsConstructor
 public class FiltersConfig {
 
     @Value(value = "${cors.urls}")
     private String corsUrls;
 
     private final UserService userService;
-
-    public FiltersConfig(UserService userService) {
-        this.userService = userService;
-    }
 
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {

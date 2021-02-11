@@ -12,6 +12,7 @@ import com.bookly.backend.models.parkly.ParklyResponseObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,12 +26,18 @@ import java.util.function.Function;
 @AllArgsConstructor
 public class ReservationService {
 
-    private final String CARLY_BOOKINGS = "http://52.3.250.46:5050/public/bookings";
-    private final String CARLY_TOKEN = "?apiKey=BTKJPMKRP";
-    private final String PARKLY_BOOKINGS = "http://parkly-env.eba-u2qumtf7.us-east-2.elasticbeanstalk.com/b/bookings";
-    private final String PARKLY_TOKEN = "?apiKey=1AC4FCOPR";
-    private final String FLATLY_BOOKINGS = "http://flatly-env.eba-pftr9jj2.eu-central-1.elasticbeanstalk.com/ext/bookings";
-    private final String FLATLY_TOKEN = "?apiKey=savekey";
+    @Value(value = "carly.bookings.url")
+    private String CARLY_BOOKINGS;
+    @Value(value = "carly.bookings.token")
+    private String CARLY_TOKEN;
+    @Value(value = "parkly.bookings.url")
+    private String PARKLY_BOOKINGS;
+    @Value(value = "parkly.bookings.token")
+    private String PARKLY_TOKEN;
+    @Value(value = "flatly.bookings.url")
+    private String FLATLY_BOOKINGS;
+    @Value(value = "flatly.bookings.token")
+    private String FLATLY_TOKEN;
 
     private UserService userService;
     private ItemRepository itemRepository;
