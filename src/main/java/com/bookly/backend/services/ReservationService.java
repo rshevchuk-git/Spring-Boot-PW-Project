@@ -3,6 +3,13 @@ package com.bookly.backend.services;
 import com.bookly.backend.dao.BookingRepository;
 import com.bookly.backend.dao.ItemRepository;
 import com.bookly.backend.models.*;
+import com.bookly.backend.models.carly.CarlyReservationObject;
+import com.bookly.backend.models.carly.CarlyResponseObject;
+import com.bookly.backend.models.flatly.FlatlyReservationObject;
+import com.bookly.backend.models.flatly.FlatlyResponseObject;
+import com.bookly.backend.models.parkly.ParklyReservationObject;
+import com.bookly.backend.models.parkly.ParklyResponseObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,26 +27,25 @@ public class ReservationService {
 
     private final String CARLY_BOOKINGS = "http://52.3.250.46:5050/public/bookings";
     private final String CARLY_TOKEN = "?apiKey=BTKJPMKRP";
-    private final String PARKLY_API = "http://parkly-env.eba-u2qumtf7.us-east-2.elasticbeanstalk.com/b/bookings";
+    private final String PARKLY_BOOKINGS = "http://parkly-env.eba-u2qumtf7.us-east-2.elasticbeanstalk.com/b/bookings";
     private final String PARKLY_TOKEN = "?apiKey=1AC4FCOPR";
-    private final String FLATLY_API = "http://flatly-env.eba-pftr9jj2.eu-central-1.elasticbeanstalk.com/ext/bookings";
+    private final String FLATLY_BOOKINGS = "http://flatly-env.eba-pftr9jj2.eu-central-1.elasticbeanstalk.com/ext/bookings";
     private final String FLATLY_TOKEN = "?apiKey=savekey";
 
     private UserService userService;
     private ItemRepository itemRepository;
     private BookingRepository bookingRepository;
-    private BookingService bookingService;
 
-    private final Map<ItemType, Function<Reservation, Boolean>> reservationByTypes = new HashMap<>(){{
-           put(ItemType.Car, ReservationService.this::carlyReservation);
-           put(ItemType.Parking, ReservationService.this::parklyReservation);
-           put(ItemType.Room, ReservationService.this::flatlyReservation);
+    private final Map<ItemType, Function<Reservation, Boolean>> reservationByTypes = new HashMap<>() {{
+        put(ItemType.Car, ReservationService.this::carlyReservation);
+        put(ItemType.Parking, ReservationService.this::parklyReservation);
+        put(ItemType.Room, ReservationService.this::flatlyReservation);
     }};
 
-    private final Map<ItemType, Function<Booking, Boolean>> cancellationsByTypes = new HashMap<>(){{
-        put(ItemType.Car, ReservationService.this::carlyCancellation);
-        put(ItemType.Parking, ReservationService.this::parklyCancellation);
-        put(ItemType.Room, ReservationService.this::flatlyCancellation);
+    private final Map<ItemType, String[]> cancellationsByTypes = new HashMap<>() {{
+        put(ItemType.Car, new String[]{CARLY_BOOKINGS, CARLY_TOKEN});
+        put(ItemType.Parking, new String[]{PARKLY_BOOKINGS, PARKLY_TOKEN});
+        put(ItemType.Room, new String[]{FLATLY_BOOKINGS, FLATLY_TOKEN});
     }};
 
     public Boolean makeReservation(Reservation reservation) {
@@ -49,7 +55,10 @@ public class ReservationService {
     @Transactional
     public void removeReservation(Long bookingId) {
         bookingRepository.findById(bookingId).ifPresent(booking -> {
-            cancellationsByTypes.get(booking.getItemType()).apply(booking);
+            String[] API = cancellationsByTypes.get(booking.getItemType());
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.delete(API[0] + "/" + booking.getItem().getItemId() + API[1]);
+
             booking.setActive(false);
             booking.getItem().setActive(false);
         });
@@ -65,26 +74,12 @@ public class ReservationService {
         carlyReservationObject.setTenantSurname(loggedUser.getLastName());
         carlyReservationObject.setStartDateTime(reservation.getFromDate());
         carlyReservationObject.setEndDateTime(reservation.getToDate());
-
         ResponseEntity<CarlyResponseObject> response = restTemplate.postForEntity(CARLY_BOOKINGS + CARLY_TOKEN, carlyReservationObject, CarlyResponseObject.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                Item newItem = itemRepository.save(new Item(0L, response.getBody().getId(), ItemType.Car.toString(), response.getBody().getStartDateTime(), response.getBody().getEndDateTime(), true, mapper.writeValueAsString(response.getBody())));
-                bookingRepository.save(new Booking((long) response.getBody().getId(), loggedUser, newItem.getStartDateTime(), true, newItem, ItemType.Car));
-                return true;
-            }catch (Exception e) {
-                return false;
-            }
+            return addNewBooking(reservation, loggedUser, response, response.getBody().getId());
         }
         return false;
-    }
-
-    private boolean carlyCancellation(Booking booking) {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.delete(CARLY_BOOKINGS + "/" + booking.getItem().getItemId() + CARLY_TOKEN);
-        return true;
     }
 
     private boolean parklyReservation(Reservation reservation) {
@@ -97,25 +92,12 @@ public class ReservationService {
         parklyReservationObject.setUserLastName(loggedUser.getLastName());
         parklyReservationObject.setStartDateTime(reservation.getFromDate());
         parklyReservationObject.setEndDateTime(reservation.getToDate());
-        ResponseEntity<ParklyResponseObject> response = restTemplate.postForEntity(PARKLY_API + PARKLY_TOKEN, parklyReservationObject, ParklyResponseObject.class);
+        ResponseEntity<ParklyResponseObject> response = restTemplate.postForEntity(PARKLY_BOOKINGS + PARKLY_TOKEN, parklyReservationObject, ParklyResponseObject.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                Item newItem = itemRepository.save(new Item(0L, response.getBody().getId(), ItemType.Parking.toString(), reservation.getFromDate(), reservation.getToDate(), true, mapper.writeValueAsString(response.getBody())));
-                bookingRepository.save(new Booking(0L, loggedUser, newItem.getStartDateTime(), true, newItem, ItemType.Parking));
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+            return addNewBooking(reservation, loggedUser, response, response.getBody().getId());
         }
         return false;
-    }
-
-    private boolean parklyCancellation(Booking booking) {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.delete(PARKLY_API + "/" + booking.getItem().getItemId() + PARKLY_TOKEN);
-        return true;
     }
 
     private boolean flatlyReservation(Reservation reservation) {
@@ -127,25 +109,23 @@ public class ReservationService {
         flatlyReservationObject.setNoOfGuests(1);
         flatlyReservationObject.setStartDate(reservation.getFromDate().toLocalDate());
         flatlyReservationObject.setEndDate(reservation.getToDate().toLocalDate());
-
-        ResponseEntity<FlatlyResponseObject> response = restTemplate.postForEntity(FLATLY_API + FLATLY_TOKEN, flatlyReservationObject, FlatlyResponseObject.class);
+        ResponseEntity<FlatlyResponseObject> response = restTemplate.postForEntity(FLATLY_BOOKINGS + FLATLY_TOKEN, flatlyReservationObject, FlatlyResponseObject.class);
 
         if (response.getStatusCode().is2xxSuccessful()) {
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                Item newItem = itemRepository.save(new Item(0L, response.getBody().getId(), ItemType.Room.toString(), reservation.getFromDate(), reservation.getToDate(), true, mapper.writeValueAsString(response.getBody())));
-                bookingRepository.save(new Booking(0L, loggedUser, newItem.getStartDateTime(), true, newItem, ItemType.Room));
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
+            return addNewBooking(reservation, loggedUser, response, response.getBody().getId());
         }
         return false;
     }
 
-    private boolean flatlyCancellation(Booking booking) {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.delete(FLATLY_API + "/" + booking.getItem().getItemId() + FLATLY_TOKEN);
-        return true;
+    private boolean addNewBooking(Reservation reservation, User user, ResponseEntity<?> response, int itemId) {
+        ObjectMapper mapper = new ObjectMapper();
+        Item newItem;
+        try {
+            newItem = itemRepository.save(new Item(0L, itemId, reservation.getItemType().toString(), reservation.getFromDate(), reservation.getToDate(), true, mapper.writeValueAsString(response.getBody())));
+            bookingRepository.save(new Booking(0L, user, newItem.getStartDateTime(), true, newItem, reservation.getItemType()));
+            return true;
+        } catch (JsonProcessingException e) {
+            return false;
+        }
     }
 }

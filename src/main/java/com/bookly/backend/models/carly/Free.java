@@ -1,4 +1,4 @@
-package com.bookly.backend.models;
+package com.bookly.backend.models.carly;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

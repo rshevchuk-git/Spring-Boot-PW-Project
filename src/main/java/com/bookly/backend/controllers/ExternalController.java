@@ -1,8 +1,8 @@
 package com.bookly.backend.controllers;
 
-import com.bookly.backend.models.Car;
-import com.bookly.backend.models.FlatsResultSet;
-import com.bookly.backend.models.ParkingResultSet;
+import com.bookly.backend.models.carly.Car;
+import com.bookly.backend.models.flatly.FlatsResultSet;
+import com.bookly.backend.models.parkly.ParkingResultSet;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;

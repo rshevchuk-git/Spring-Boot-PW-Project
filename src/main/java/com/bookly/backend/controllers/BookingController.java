@@ -49,7 +49,8 @@ public class BookingController {
     @ApiOperation(value = "Adds new booking to the database")
     @ApiImplicitParam(name = "Security-Token", paramType = "header", dataTypeClass = String.class)
     public ResponseEntity<Booking> addNewBooking(@RequestBody Booking newBooking) {
-        return new ResponseEntity<>(bookingService.saveBooking(newBooking), HttpStatus.OK);
+        Booking savedBooking = bookingService.saveBooking(newBooking);
+        return new ResponseEntity<>(savedBooking, HttpStatus.OK);
     }
 
     @PostMapping("/reservations")
@@ -60,7 +61,8 @@ public class BookingController {
         if (reservation.getItemId() == null || reservation.getItemId() < 0) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         if (reservation.getUserId() == null || reservation.getUserId() < 0) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         if (reservation.getItemType() == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        return new ResponseEntity<>(reservationService.makeReservation(reservation), HttpStatus.OK);
+        Boolean isSuccessful = reservationService.makeReservation(reservation);
+        return new ResponseEntity<>(isSuccessful, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")

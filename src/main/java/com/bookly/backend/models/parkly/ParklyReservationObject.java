@@ -1,20 +1,19 @@
-package com.bookly.backend.models;
+package com.bookly.backend.models.parkly;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-public class ParklyResponseObject {
-    private int id;
-    private int userId;
+public class ParklyReservationObject {
+    private Long parkingId;
+    private Long userId;
     private String userFirstName;
     private String userLastName;
-    private String parkingName;
-    private int price;
-    private int parkingId;
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
 }

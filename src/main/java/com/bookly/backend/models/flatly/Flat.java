@@ -1,4 +1,4 @@
-package com.bookly.backend.models;
+package com.bookly.backend.models.flatly;
 
 
 import lombok.Data;

@@ -22,9 +22,8 @@ public class BookingService {
 
     private final int PAGE_SIZE = 5;
 
-    private final BookingRepository bookingRepository;
-    private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
 
     public Optional<Booking> getBookingById(Long bookingId) {
         return bookingRepository.findById(bookingId);
@@ -52,10 +51,4 @@ public class BookingService {
         return bookingRepository.findAllByIsActiveAndItemTypeAndOwner(isActive, car, parking, room, user, pageConfig);
     }
 
-    public void deleteBookingById(Long bookingId) {
-        bookingRepository.findById(bookingId).ifPresent(booking -> {
-            Long id = booking.getItem().getId();
-            itemRepository.deleteById(id);
-        });
-    }
 }

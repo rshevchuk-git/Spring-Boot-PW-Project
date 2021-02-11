@@ -1,21 +1,19 @@
-package com.bookly.backend.models;
+package com.bookly.backend.models.carly;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class CarlyResponseObject {
-    private int id;
-    private int carId;
-    private int tenantId;
+@NoArgsConstructor
+public class CarlyReservationObject {
+    private Long carId;
     private String tenantFirstname;
     private String tenantSurname;
-    private String carModel;
-    private String carPlateNumber;
-    private String carDescription;
+    private Long tenantId;
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
 }

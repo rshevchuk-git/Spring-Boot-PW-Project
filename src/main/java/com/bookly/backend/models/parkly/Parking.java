@@ -1,4 +1,4 @@
-package com.bookly.backend.models;
+package com.bookly.backend.models.parkly;
 
 
 import lombok.Data;
